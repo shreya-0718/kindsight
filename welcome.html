@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Kindsight!</title>
+    <style>
+    </style>     
+</head>
+
+<body>
+  <div>
+
+    <h2>welcome to</h2>
+    <h1>Kindsight</h1>
+
+    <p>
+      Thanks for adding Kindsight to your browser!  
+      You can open the extension anytime by clicking the Kindsight icon in your toolbar.
+    </p>
+
+    <div>Check out our features!</div>
+
+    <div class="feature" onclick="toggleFeature(0)">
+      <div class="feature-header">
+        <span>Hover-to-Magnify</span>
+        <span>+</span>
+      </div>
+      <div class="dropdown">
+        Instantly zoom in on anything by hovering your cursor. Great for small text or detailed images and text!
+      </div>
+    </div>
+
+    <div class="feature" onclick="toggleFeature(1)">
+      <div class="feature-header">
+        <span>Text-to-Speech</span>
+        <span>+</span>
+      </div>
+      <div class="dropdown">
+        Have any selected text be read aloud. Adjust speed and choose from different voices.
+      </div>
+    </div>
+
+    <div class="feature" onclick="toggleFeature(2)">
+      <div class="feature-header">
+        <span>Color Themes</span>
+        <span>+</span>
+      </div>
+      <div class="dropdown">
+        Choose from high-contrast, soft light/dark, warm tint, pastel, color-blind-friendly, and grayscale modes.
+      </div>
+    </div>
+
+    <div class="feature" onclick="toggleFeature(3)">
+      <div class="feature-header">
+        <span>Font Adjustments</span>
+        <span>+</span>
+      </div>
+      <div class="dropdown">
+        Customize font size, spacing, etc. to make text more comfortable to read.
+      </div>
+    </div>
+
+    <footer>
+      made with love
+    </footer>
+
+  </div>
+
+  <script>
+    function toggleFeature(index) {
+      const dropdowns = document.querySelectorAll('.dropdown');
+      const features = document.querySelectorAll('.feature');
+
+      dropdowns.forEach((drop, i) => {
+        if (i === index) {
+          const isOpen = drop.style.display === "block";
+          drop.style.display = isOpen ? "none" : "block";
+        } else {
+          drop.style.display = "none";
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
