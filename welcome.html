@@ -9,7 +9,7 @@
 
     <style>
         :root {
-            --cloud-size: 600px;
+            --cloud-size: 2300px;
         }
 
         body {
@@ -20,7 +20,6 @@
             padding: 40px 20px;
             color: #333;
             position: relative;
-            min-height: 100vh;
             overflow-x: hidden;
         }
 
@@ -31,20 +30,20 @@
             left: 0;
             width: 200%;
             height: 100%;
-            background-image: url('images/pink.png');
+            background-image: url('images/bg.png');
             background-size: var(--cloud-size);
             background-repeat: repeat;
             z-index: 1;
-            animation: float-clouds 20s linear infinite;
+            animation: float-clouds 60s linear infinite;
             pointer-events: none;
         }
 
         @keyframes float-clouds {
             0% {
-                background-position: 0 0;
+                background-position: var(--cloud-size) -70px;
             }
             100% {
-                background-position: var(--cloud-size) 0;
+                background-position: 0 -70px;
             }
         }
 
@@ -202,7 +201,7 @@
     </div>
 
     <footer>
-      made with 💖 by Team Kindsight
+      made with 🩷 by Team Kindsight
     </footer>
 
   </div>

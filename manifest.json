@@ -3,22 +3,27 @@
   "name": "Kindsight",
   "version": "1.0.0",
   "description": "Visual accessibility tools: hover magnifying glass, text-to-speech, adjustable fonts, and customizable color themes for improved visual accessibility",
+
   "permissions": [
     "storage",
     "tts",
     "scripting",
     "activeTab"
   ],
+
   "host_permissions": [
     "<all_urls>"
   ],
+
   "action": {
     "default_popup": "popup.html",
     "default_title": "Kindsight"
   },
+
   "background": {
     "service_worker": "background.js"
   },
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -27,6 +32,14 @@
       "run_at": "document_start"
     }
   ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["libs/html2canvas.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
   "icons": {
     "128": "images/icon-128.png"
   }
