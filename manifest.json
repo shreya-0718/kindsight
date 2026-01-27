@@ -21,7 +21,8 @@
   },
 
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
 
   "content_scripts": [
@@ -29,14 +30,7 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["content.css"],
-      "run_at": "document_start"
-    }
-  ],
-
-  "web_accessible_resources": [
-    {
-      "resources": ["libs/html2canvas.js"],
-      "matches": ["<all_urls>"]
+      "run_at": "document_end"
     }
   ],
 

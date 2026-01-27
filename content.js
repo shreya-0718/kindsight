@@ -1,187 +1,206 @@
 let lens = null;
-let screenshotCanvas = null;
-let screenshotCtx = null;
-let currentSettings = null;
 let lensCreated = false;
-let h2c = null; // bridged html2canvas
+let lensContentWrapper = null;
 
-document.addEventListener("H2C_READY", (event) => {
-    h2c = event.detail.html2canvas;
-    console.log("html2canvas bridged into content script");
-});
+let currentSettings = null;
 
-function injectHtml2Canvas() {
-    return new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = chrome.runtime.getURL("libs/html2canvas.js");
+let lastMouse = { clientX: 0, clientY: 0, pageX: 0, pageY: 0 };
+let rafPending = false;
 
-        script.onload = () => {
-            console.log("html2canvas loaded in page");
-
-            const bridge = document.createElement("script");
-            bridge.textContent = `
-                document.dispatchEvent(new CustomEvent("H2C_READY", {
-                    detail: { html2canvas }
-                }));
-            `;
-            document.documentElement.appendChild(bridge);
-
-            resolve();
-        };
-
-        script.onerror = () => {
-            console.error("Failed to load html2canvas");
-            resolve();
-        };
-
-        document.documentElement.appendChild(script);
-    });
-}
-
-async function initializeMagnifier() {
-    await injectHtml2Canvas();
-
-    chrome.storage.sync.get(
-        {
-            magnifyEnabled: false,
-            zoomScale: 2,
-            magnifierShape: "circle"
-        },
-        async (settings) => {
-            currentSettings = settings;
-            console.log("Magnifier initialized with settings:", currentSettings);
-
-            if (currentSettings?.magnifyEnabled) {
-                await takeScreenshot();
-                if (!lensCreated) {
-                    createLens();
-                    attachListeners();
-                    lensCreated = true;
-                }
-            }
-        }
-    );
-}
-
-async function takeScreenshot() {
-    try {
-        if (!h2c) {
-            console.error("html2canvas not bridged");
-            return;
-        }
-
-        const screenshot = await h2c(document.body, {
-            scale: 1,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: null
-        });
-
-        console.log("Screenshot result:", screenshot);
-
-        screenshotCanvas = document.createElement("canvas");
-        screenshotCanvas.width = screenshot.width;
-        screenshotCanvas.height = screenshot.height;
-
-        screenshotCtx = screenshotCanvas.getContext("2d");
-        screenshotCtx.drawImage(screenshot, 0, 0);
-    } catch (error) {
-        console.error("Error taking screenshot:", error);
-        screenshotCanvas = null;
-    }
-}
+const LENS_SIZE = 150;
 
 function createLens() {
-    const size = 150;
+  const size = LENS_SIZE;
 
-    lens = document.createElement("div");
-    lens.style.cssText = `
-        position: fixed;
-        width: ${size}px;
-        height: ${size}px;
-        overflow: hidden;
-        pointer-events: none;
-        z-index: 999999;
-        border: 3px solid #91b8ff;
-        box-shadow: 0 0 15px rgba(102,126,234,0.4);
-        display: none;
-        ${currentSettings.magnifierShape === "circle" ? "border-radius: 50%;" : "border-radius: 8px;"}
-    `;
+  lens = document.createElement("div");
+  lens.style.cssText = `
+    position: fixed;
+    width: ${size}px;
+    height: ${size}px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 999999;
+    border: 3px solid #91b8ff;
+    box-shadow: 0 0 15px rgba(102,126,234,0.4);
+    display: none;
+    left: 0px;
+    top: 0px;
+    ${currentSettings?.magnifierShape === "circle" ? "border-radius: 50%;" : "border-radius: 8px;"}
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(2px);
+  `;
 
-    const lensCanvas = document.createElement("canvas");
-    lensCanvas.width = size;
-    lensCanvas.height = size;
-    lens.appendChild(lensCanvas);
+  lensContentWrapper = document.createElement("div");
+  lensContentWrapper.style.cssText = `
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+  `;
 
-    document.body.appendChild(lens);
+  const clone = document.body.cloneNode(true);
+  clone.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+  `;
+
+  lensContentWrapper.appendChild(clone);
+  lens.appendChild(lensContentWrapper);
+  document.documentElement.appendChild(lens);
+}
+
+function removeLens() {
+  if (lens) {
+    lens.remove();
+    lens = null;
+  }
 }
 
 function attachListeners() {
-    document.addEventListener("mousemove", handleMove);
-    document.addEventListener("scroll", handleMove);
+  document.addEventListener("mousemove", onMouseMove, { passive: true });
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onResize, { passive: true });
 }
 
 function detachListeners() {
-    document.removeEventListener("mousemove", handleMove);
-    document.removeEventListener("scroll", handleMove);
+  document.removeEventListener("mousemove", onMouseMove);
+  window.removeEventListener("scroll", onScroll);
+  window.removeEventListener("resize", onResize);
 }
 
-function handleMove(e) {
-    if (!lens || !currentSettings?.magnifyEnabled || !screenshotCanvas) return;
-
-    const size = 150;
-    const zoom = currentSettings.zoomScale || 2;
-
-    lens.style.display = "block";
-    lens.style.left = `${e.clientX - size / 2}px`;
-    lens.style.top = `${e.clientY - size / 2}px`;
-
-    const sx = e.pageX - size / (2 * zoom);
-    const sy = e.pageY - size / (2 * zoom);
-    const sw = size / zoom;
-    const sh = size / zoom;
-
-    const lensCanvas = lens.firstElementChild;
-    const lensCtx = lensCanvas.getContext("2d");
-
-    lensCtx.clearRect(0, 0, size, size);
-    lensCtx.drawImage(
-        screenshotCanvas,
-        sx, sy, sw, sh,
-        0, 0, size, size
-    );
+function onMouseMove(e) {
+  lastMouse = {
+    clientX: e.clientX,
+    clientY: e.clientY,
+    pageX: e.pageX,
+    pageY: e.pageY
+  };
+  scheduleRedraw();
 }
 
-chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === "updateMagnifier") {
-        currentSettings = request.settings;
-        console.log("Updated magnifier settings:", currentSettings);
+function onScroll() {
+  scheduleRedraw();
+}
 
-        if (currentSettings?.magnifyEnabled) {
-            if (lens) {
-                lens.remove();
-                lens = null;
-                lensCreated = false;
-            }
-            takeScreenshot().then(() => {
-                createLens();
-                if (!lensCreated) {
-                    attachListeners();
-                    lensCreated = true;
-                }
-            });
-        } else {
-            if (lens) lens.style.display = "none";
-            if (lensCreated) {
-                detachListeners();
-                lensCreated = false;
-            }
-        }
+function onResize() {
+  if (currentSettings?.magnifyEnabled) {
+    takeScreenshot().then(scheduleRedraw);
+  }
+}
+
+function scheduleRedraw() {
+  if (rafPending) return;
+  rafPending = true;
+
+  requestAnimationFrame(() => {
+    rafPending = false;
+    redrawLens(lastMouse);
+  });
+}
+
+function redrawLens(pos) {
+  if (!lens || !currentSettings?.magnifyEnabled) return;
+
+  const size = LENS_SIZE;
+  const zoom = Number(currentSettings.zoomScale || 2);
+
+  lens.style.display = "block";
+  lens.style.left = `${pos.clientX - size / 2}px`;
+  lens.style.top = `${pos.clientY - size / 2}px`;
+
+  const centerOffset = size / 2; 
+  
+  lensContentWrapper.style.transform = `scale(${zoom})`;
+  
+  const clonedBody = lensContentWrapper.firstElementChild;
+  if (clonedBody) {
+    clonedBody.style.left = `${centerOffset / zoom - pos.pageX}px`;
+    clonedBody.style.top = `${centerOffset / zoom - pos.pageY}px`;
+  }
+}
+
+async function enableMagnifier() {
+  if (!lensCreated) {
+    createLens();
+    attachListeners();
+    lensCreated = true;
+  }
+  scheduleRedraw();
+}
+
+function disableMagnifier() {
+  if (lens) lens.style.display = "none";
+  if (lensCreated) {
+    detachListeners();
+    removeLens();
+    lensCreated = false;
+  }
+}
+
+function safeStorageGet(defaults) {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.sync.get(defaults, (settings) => resolve(settings));
+    } catch (e) {
+      console.warn("[magnifier] storage.get failed", e);
+      resolve({ ...defaults });
     }
-});
+  });
+}
+
+function setupRuntimeListener() {
+  try {
+    chrome.runtime.onMessage.addListener((request) => {
+      if (request?.action !== "updateMagnifier") return;
+
+      currentSettings = request.settings;
+      console.log("[magnifier] settings (updated):", currentSettings);
+
+      if (currentSettings?.magnifyEnabled) {
+        if (!lensCreated) {
+          enableMagnifier();
+        } else {
+          if (lens) {
+            lens.style.borderRadius = currentSettings?.magnifierShape === "circle" ? "50%" : "8px";
+          }
+          scheduleRedraw();
+        }
+      } else {
+        disableMagnifier();
+      }
+    });
+  } catch (e) {
+    console.warn("[magnifier] runtime listener failed", e);
+  }
+}
+
+async function initializeMagnifier() {
+  const settings = await safeStorageGet({
+    magnifyEnabled: false,
+    zoomScale: 2,
+    magnifierShape: "circle"
+  });
+
+  currentSettings = settings;
+  console.log("[magnifier] initialized. settings:", currentSettings);
+
+  if (currentSettings?.magnifyEnabled) {
+    enableMagnifier();
+  } else {
+    disableMagnifier();
+  }
+}
+
+setupRuntimeListener();
 
 window.addEventListener("load", () => {
-    setTimeout(() => {
-        initializeMagnifier();
-    }, 300);
+  setTimeout(() => {
+    initializeMagnifier();
+  }, 300);
 });
