@@ -4,22 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Kindsight!</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Cursive:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
-    </style>     
+        :root {
+            --cloud-size: 600px;
+        }
+
+        body {
+            font-family: 'Verdana', sans-serif;
+            background: #a2d1e8;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #333;
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background-image: url('images/pink.png');
+            background-size: var(--cloud-size);
+            background-repeat: repeat;
+            z-index: 1;
+            animation: float-clouds 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float-clouds {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: var(--cloud-size) 0;
+            }
+        }
+
+        .box {
+            background: white;
+            border-radius: 12px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            border: 5px solid #ffaacb;
+            padding: 36px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            z-index: 2;
+        }
+
+        h3 {
+          margin-top: 4%;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: -6%;
+            letter-spacing: 0.5px;
+        }
+
+        h1 {
+            font-family: "Edu NSW ACT Cursive", cursive;
+            font-size: 42px;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        p {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #444;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #444;
+        }
+
+        .feature {
+            background: #fdf6f9;
+            border: 1px solid #ffaacb;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-align: left;
+        }
+
+        .feature:hover {
+            background: #fbeaf1;
+        }
+
+        .feature-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .feature-header span:last-child {
+            font-weight: bold;
+            color: #777;
+        }
+
+        .dropdown {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.4;
+            display: none;
+            padding-right: 4px;
+        }
+
+        footer {
+            margin-top: 24px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .icon {
+            position: fixed;
+            top: 30px;
+            left: 20px;
+            z-index: 0;
+            width: 80px;
+            height: 80px;
+        }
+    </style>
 </head>
 
 <body>
-  <div>
+  <img src="images/icon-128.png" alt="Kindsight Icon" class="icon">
+  <div class="box">
 
     <h2>welcome to</h2>
     <h1>Kindsight</h1>
 
     <p>
       Thanks for adding Kindsight to your browser!  
+    </p>
+    <p>
       You can open the extension anytime by clicking the Kindsight icon in your toolbar.
     </p>
 
-    <div>Check out our features!</div>
+    <h3>Check out the features!</h3>
 
     <div class="feature" onclick="toggleFeature(0)">
       <div class="feature-header">
@@ -62,7 +202,7 @@
     </div>
 
     <footer>
-      made with love
+      made with 💖 by Team Kindsight
     </footer>
 
   </div>
