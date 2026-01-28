@@ -4,15 +4,21 @@
     box-sizing: border-box;
 }
 
+html, body {
+    border-radius: 16px;         
+    overflow: hidden;          
+    box-shadow:  rgba(0,0,0,0.25); 
+    background: none;
+}
+
 body {
     width: 400px;
     font-family: 'Verdana', sans-serif;
-    background: #a2d1e8;
     color: #333;
 }
 
 .container {
-    height: 600px;
+    height: 500px;
     display: flex;
     flex-direction: column;
 }
@@ -22,6 +28,15 @@ header {
     text-align: center;
     border-bottom: 3px solid #ffaacb;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    background: #a2d1e8;
+
+}
+
+img {
+    height: 50px;
 }
 
 header h1 {
@@ -49,14 +64,15 @@ header h1 {
     transition: all 0.3s ease;
     border-bottom: 3px solid transparent;
     text-align: center;
+    background: #fdf6f9;
 }
 
 .tab-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: #fbeaf1;
 }
 
 .tab-btn.active {
-    background: rgba(255, 255, 255, 0.25);
+    background: #fbeaf1;
     border-bottom-color: #ffaacb;
 }
 
@@ -179,7 +195,7 @@ header h1 {
     background: white;
     border-radius: 6px;
     cursor: pointer;
-    color: #667eea;
+    color: #ffaacb;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -187,12 +203,12 @@ header h1 {
 }
 
 .shape-btn:hover {
-    border-color: #667eea;
+    border-color: #ffaacb;
     background: #f5f7fa;
 }
 
 .shape-btn.active {
-    border-color: #667eea;
+    border-color: #ffaacb;
     background: #a2d1e8;
     color: white;
 }
