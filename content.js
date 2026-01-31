@@ -1,3 +1,4 @@
+// magnifier
 let lens = null;
 let lensCreated = false;
 let lensContentWrapper = null;
@@ -203,4 +204,473 @@ window.addEventListener("load", () => {
   setTimeout(() => {
     initializeMagnifier();
   }, 300);
+});
+
+
+// speech 
+let quickSpeakBubble = null;
+
+function createQuickSpeakBubble(x, y, selectedText) {
+  try {
+    if (quickSpeakBubble) {
+      if (quickSpeakBubble._hideTimeout) clearTimeout(quickSpeakBubble._hideTimeout);
+      quickSpeakBubble.remove();
+      quickSpeakBubble = null;
+    }
+  } catch (e) {}
+
+  quickSpeakBubble = document.createElement('div');
+  quickSpeakBubble.className = 'kindsight-tts-bubble kindsight-bubble-animate-in';
+  quickSpeakBubble.style.cssText = `
+    position: fixed;
+    left: ${x}px;
+    top: ${y - 50}px;
+    z-index: 999999;
+    pointer-events: auto;
+  `;
+
+  quickSpeakBubble.innerHTML = `
+    <svg viewBox="0 0 24 24" width="20" height="20" style="fill: #ffaacb;">
+      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+      <path d="M17 16.91c-1.48 1.45-3.5 2.32-5.7 2.32-2.2 0-4.22-.87-5.7-2.32M19 12h2c0 2.96-1.54 5.55-3.85 7M5 12H3c0 2.96 1.54 5.55 3.85 7"/>
+    </svg>
+  `;
+
+  quickSpeakBubble.style.backgroundColor = '#a2d1e8';
+  quickSpeakBubble.style.borderRadius = '20px';
+  quickSpeakBubble.style.padding = '10px 15px';
+  quickSpeakBubble.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+  quickSpeakBubble.style.cursor = 'pointer';
+  quickSpeakBubble.style.display = 'flex';
+  quickSpeakBubble.style.alignItems = 'center';
+  quickSpeakBubble.style.gap = '8px';
+  quickSpeakBubble.style.transition = 'all 0.2s ease';
+
+  let hideTimeout;
+
+  function hideQuickSpeakBubble() {
+    if (quickSpeakBubble) {
+      quickSpeakBubble.classList.remove('kindsight-bubble-animate-in');
+      quickSpeakBubble.classList.add('kindsight-bubble-animate-out');
+
+      try { clearQuickHighlight(); } catch (e) {}
+
+      setTimeout(() => {
+        if (quickSpeakBubble) {
+          quickSpeakBubble.remove();
+          quickSpeakBubble = null;
+        }
+      }, 300);
+    }
+  }
+
+  quickSpeakBubble.addEventListener('mouseenter', () => {
+    quickSpeakBubble.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+    quickSpeakBubble.style.transform = 'scale(1.05)';
+    clearTimeout(hideTimeout);
+  });
+
+  quickSpeakBubble.addEventListener('mouseleave', () => {
+    quickSpeakBubble.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    quickSpeakBubble.style.transform = 'scale(1)';
+    hideTimeout = setTimeout(hideQuickSpeakBubble, 3000);
+    quickSpeakBubble._hideTimeout = hideTimeout;
+  });
+
+  quickSpeakBubble.addEventListener('click', () => {
+    chrome.runtime.sendMessage({
+      action: 'tts_speak',
+      text: selectedText
+    });
+
+    quickSpeakBubble.classList.remove('kindsight-bubble-animate-in');
+    quickSpeakBubble.classList.add('kindsight-bubble-animate-out');
+    setTimeout(() => {
+      if (quickSpeakBubble) {
+        quickSpeakBubble.remove();
+        quickSpeakBubble = null;
+      }
+    }, 300);
+  });
+
+  try {
+    const wrapper = wrapSelectionWithHighlight();
+    if (wrapper) readerState.quickWrapper = wrapper;
+  } catch (e) {}
+
+  document.body.appendChild(quickSpeakBubble);
+
+  hideTimeout = setTimeout(hideQuickSpeakBubble, 20000);
+  quickSpeakBubble._hideTimeout = hideTimeout;
+}
+
+const originalMouseUpHandler = document.onmouseup;
+
+document.addEventListener('click', (ev) => {
+  if (!quickSpeakBubble && readerState.quickWrapper) {
+    try { clearQuickHighlight(); } catch (e) {}
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  const selectedText = window.getSelection().toString().trim();
+
+  if (selectedText && selectedText.length > 0) {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + window.scrollY;
+
+    createQuickSpeakBubble(x, y, selectedText);
+  } else {
+    if (quickSpeakBubble) {
+      quickSpeakBubble.classList.remove('kindsight-bubble-animate-in');
+      quickSpeakBubble.classList.add('kindsight-bubble-animate-out');
+
+      try { clearQuickHighlight(); } catch (e) {}
+
+      setTimeout(() => {
+        if (quickSpeakBubble) {
+          quickSpeakBubble.remove();
+          quickSpeakBubble = null;
+        }
+      }, 300);
+    }
+  }
+});
+
+
+const readerState = {
+  isInitialized: false,
+  chunks: [],
+  currentIndex: 0,
+  isHighlighting: true,
+  highlightedElements: [],
+  quickWrapper: null
+};
+
+function wrapSelectionWithHighlight() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0).cloneRange();
+
+  const span = document.createElement('span');
+  span.className = 'kindsight-reader-highlight';
+  span.dataset.kindsightQuick = '1';
+
+  try {
+    range.surroundContents(span);
+  } catch (e) {
+    const frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+
+  try { span.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  return span;
+}
+
+function clearQuickHighlight() {
+  try {
+    if (readerState.quickWrapper) {
+      const wrapper = readerState.quickWrapper;
+      const parent = wrapper.parentNode;
+      if (parent) {
+        while (wrapper.firstChild) parent.insertBefore(wrapper.firstChild, wrapper);
+        parent.removeChild(wrapper);
+      }
+      readerState.quickWrapper = null;
+    }
+
+    const underlines = document.querySelectorAll('.kindsight-word-underlined');
+    underlines.forEach(u => {
+      const p = u.parentNode;
+      if (!p) return;
+      while (u.firstChild) p.insertBefore(u.firstChild, u);
+      p.removeChild(u);
+    });
+  } catch (e) {}
+}
+
+function highlightWordInQuickWrapper(start, length) {
+  if (!readerState.quickWrapper) return;
+
+  const wrapperText = readerState.quickWrapper.textContent || '';
+  if (!wrapperText || wrapperText.length === 0) return;
+
+  start = Math.max(0, Math.min(start || 0, wrapperText.length - 1));
+  length = Math.max(1, Math.min(length || 1, wrapperText.length - start));
+
+  const prevUnderlines = readerState.quickWrapper.querySelectorAll('.kindsight-word-underlined');
+  prevUnderlines.forEach(el => {
+    const parent = el.parentNode;
+    if (parent) {
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+    }
+  });
+
+  let globalOffset = 0;
+  const nodes = [];
+  let textStart = -1, textEnd = -1;
+
+  const walker = document.createTreeWalker(readerState.quickWrapper, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const len = node.textContent.length;
+    const nodeStart = globalOffset;
+    const nodeEnd = globalOffset + len;
+
+    if (nodeEnd > start && nodeStart < start + length) {
+      const overlapStart = Math.max(0, start - nodeStart);
+      const overlapEnd = Math.min(len, start + length - nodeStart);
+      if (overlapStart < overlapEnd) {
+        nodes.push({ node, start: overlapStart, end: overlapEnd });
+      }
+    }
+    globalOffset += len;
+  }
+
+  if (nodes.length === 0) return; 
+  
+  try {
+    const span = document.createElement('span');
+    span.className = 'kindsight-word-underlined';
+
+    if (nodes.length === 1) {
+      const { node, start: s, end: e } = nodes[0];
+      const range = document.createRange();
+      range.setStart(node, s);
+      range.setEnd(node, e);
+
+      try {
+        range.surroundContents(span);
+      } catch (err) {
+        const frag = range.extractContents();
+        span.appendChild(frag);
+        range.insertNode(span);
+      }
+    } else {
+      const { node: firstNode, start: firstStart } = nodes[0];
+      const { node: lastNode, end: lastEnd } = nodes[nodes.length - 1];
+      const range = document.createRange();
+      range.setStart(firstNode, firstStart);
+      range.setEnd(lastNode, lastEnd);
+      const frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
+
+    try { span.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  } catch (e) {
+    console.warn('[content] underline failed', e);
+  }
+} 
+
+
+function extractPageText() {
+  const clone = document.body.cloneNode(true);
+  const scripts = clone.querySelectorAll('script, style, noscript');
+  scripts.forEach(script => script.remove());
+
+  return clone.innerText || '';
+}
+
+
+function splitIntoChunks(text) {
+  const sentenceRegex = /[^.!?]+[.!?]+/g;
+  const sentences = text.match(sentenceRegex) || [text];
+
+  const chunks = [];
+
+  sentences.forEach(sentence => {
+    const trimmed = sentence.trim();
+    if (trimmed.length === 0) return;
+
+    if (trimmed.length > 250) {
+      const parts = trimmed.match(/.{1,250}(?:\s+|$)/g) || [trimmed];
+      chunks.push(...parts.filter(p => p.trim().length > 0));
+    } else {
+      chunks.push(trimmed);
+    }
+  });
+
+  return chunks.length > 0 ? chunks : [text];
+}
+
+
+function highlightChunk(chunkIndex) {
+  readerState.highlightedElements.forEach(el => {
+    el.classList.remove('kindsight-reader-highlight');
+  });
+  readerState.highlightedElements = [];
+
+  if (chunkIndex >= readerState.chunks.length) return;
+
+  const chunk = readerState.chunks[chunkIndex];
+  if (!chunk || chunk.length === 0) return;
+
+  const treeWalker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  let node;
+
+  while ((node = treeWalker.nextNode())) {
+    if (node.textContent.includes(chunk.substring(0, Math.min(50, chunk.length)))) {
+      const parent = node.parentElement;
+      if (parent) {
+        parent.classList.add('kindsight-reader-highlight');
+        readerState.highlightedElements.push(parent);
+        try {
+          parent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) {}
+        return;
+      }
+    }
+  }
+}
+
+
+function initializeReaderMode() {
+  const selectedText = window.getSelection().toString().trim();
+  const textToRead = selectedText || extractPageText();
+
+  if (!textToRead) {
+    console.warn('[reader] No text found to read');
+    return null;
+  }
+
+  readerState.chunks = splitIntoChunks(textToRead);
+  readerState.currentIndex = 0;
+  readerState.isInitialized = true;
+
+  return readerState.chunks;
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'tts_start_reader') {
+    console.log('Received tts_start_reader request');
+    const chunks = initializeReaderMode();
+    if (chunks && chunks.length > 0) {
+      console.log(`reader initialized with ${chunks.length} chunks`);
+      highlightChunk(0);
+      chrome.runtime.sendMessage({
+        action: 'tts_start_reader',
+        chunks: chunks,
+        rate: request.rate || 1,
+        voice: request.voice || ''
+      });
+      sendResponse({ success: true, totalChunks: chunks.length });
+    } else {
+      console.warn('no text found to read');
+      sendResponse({ success: false, error: 'No text to read' });
+    }
+    return true;
+  }
+
+  if (request.action === 'tts_update_progress') {
+    readerState.currentIndex = request.currentIndex;
+    highlightChunk(request.currentIndex);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_quick_start') {
+    try {
+      if (!readerState.quickWrapper) {
+        const wrapper = wrapSelectionWithHighlight();
+        if (wrapper) readerState.quickWrapper = wrapper;
+      }
+      const prev = readerState.quickWrapper ? readerState.quickWrapper.querySelectorAll('.kindsight-word-underlined') : [];
+      prev.forEach(p => {
+        const parent = p.parentNode;
+        if (!parent) return;
+        while (p.firstChild) parent.insertBefore(p.firstChild, p);
+        parent.removeChild(p);
+      });
+    } catch (e) {}
+
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_quick_word') {
+    const idx = request.charIndex || 0;
+    const len = request.charLength || 1;
+    console.log('quick_word event:', { idx, len, wrapperExists: !!readerState.quickWrapper, wrapperText: readerState.quickWrapper?.textContent?.slice(0, 50) });
+    highlightWordInQuickWrapper(idx, len);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_quick_end') {
+    clearQuickHighlight();
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_chunk_finished') {
+    readerState.currentIndex = request.currentIndex;
+    highlightChunk(request.currentIndex);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_pause') {
+    chrome.runtime.sendMessage({ action: 'tts_pause' });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_resume') {
+    chrome.runtime.sendMessage({ action: 'tts_resume' });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_stop') {
+    chrome.runtime.sendMessage({ action: 'tts_stop' });
+    readerState.highlightedElements.forEach(el => {
+      el.classList.remove('kindsight-reader-highlight');
+    });
+    readerState.highlightedElements = [];
+    clearQuickHighlight();
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_seek') {
+    readerState.currentIndex = request.index;
+    highlightChunk(request.index);
+    chrome.runtime.sendMessage({
+      action: 'tts_seek',
+      index: request.index
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_set_rate') {
+    chrome.runtime.sendMessage({
+      action: 'tts_set_rate',
+      rate: request.rate
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'tts_set_voice') {
+    chrome.runtime.sendMessage({
+      action: 'tts_set_voice',
+      voice: request.voice
+    });
+    sendResponse({ success: true });
+    return true;
+  }
 });

@@ -56,7 +56,51 @@
 
         <div id="speech" class="tab-content">
             <h2>Text-to-Speech</h2>
-            <p class="placeholder">Speech controls coming soon...</p>
+            <div class="reader-mode-container">
+                <div class="player-controls">
+                    <button id="playBtn" type="button" class="player-btn play-btn" title="Play">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M8 5v14l11-7z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button id="pauseBtn" type="button" class="player-btn pause-btn hidden" title="Pause">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button id="stopBtn" type="button" class="player-btn stop-btn" title="Stop">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M6 6h12v12H6z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                        <input type="range" id="progressSlider" class="progress-slider" min="0" max="100" value="0">
+                    </div>
+                    <div class="time-display">
+                        <span id="currentTime">0</span> / <span id="totalTime">0</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="speedSlider">Speed: <span id="speedValue">1x</span></label>
+                    <input type="range" id="speedSlider" class="slider" min="0.5" max="2" step="0.1" value="1">
+                </div>
+
+                <div class="control-group">
+                    <label for="voiceSelect">Voice:</label>
+                    <select id="voiceSelect" class="voice-select">
+                        <option value="">Default</option>
+                    </select>
+                </div>
+
+                <div class="status-display">
+                    <p id="statusText">Ready to read!</p>
+                </div>
+            </div>
         </div>
 
         <div id="fonts" class="tab-content">
