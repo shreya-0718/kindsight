@@ -204,7 +204,7 @@ function speakCurrentChunk() {
     voiceName: ttsState.voice || ''
   }, () => {
     if (ttsState.utterancePending && ttsState.isPlaying) {
-\      handleUtteranceFinished();
+      handleUtteranceFinished();
     }
   });
 } 

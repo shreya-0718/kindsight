@@ -1,7 +1,13 @@
 const DEFAULT_SETTINGS = {
     magnifyEnabled: false,
     zoomScale: 2,
-    magnifierShape: 'circle'
+    magnifierShape: 'circle',
+    fontFamily: 'system',
+    fontSize: 16,
+    lineSpacing: 1.5,
+    boldText: false,
+    colorTheme: 'normal',
+    highContrast: false
 };
 
 let currentSettings = DEFAULT_SETTINGS;
@@ -43,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     initializeTabs();
     initializeMagnifyControls();
+    initializeFontControls();
+    initializeColorControls();
     initializeReaderMode();
     populateVoices();
 });
@@ -116,6 +124,20 @@ function updateUI() {
             btn.classList.add('active');
         }
     });
+
+    document.getElementById('fontFamily').value = currentSettings.fontFamily;
+    document.getElementById('fontSize').value = currentSettings.fontSize;
+    document.getElementById('fontSizeValue').textContent = currentSettings.fontSize;
+    document.getElementById('lineSpacing').value = currentSettings.lineSpacing;
+    document.getElementById('lineSpacingValue').textContent = currentSettings.lineSpacing;
+    document.getElementById('boldText').checked = currentSettings.boldText;
+
+    document.querySelectorAll('.color-theme-btn').forEach((btn) => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-theme') === currentSettings.colorTheme) {
+            btn.classList.add('active');
+        }
+    });
 }
 
 function updateMagnifier() {
@@ -131,6 +153,83 @@ function updateMagnifier() {
     });
 }
 
+function initializeFontControls() {
+    const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const fontSizeValue = document.getElementById('fontSizeValue');
+    const lineSpacing = document.getElementById('lineSpacing');
+    const lineSpacingValue = document.getElementById('lineSpacingValue');
+    const boldText = document.getElementById('boldText');
+
+    fontFamily.addEventListener('change', () => {
+        currentSettings.fontFamily = fontFamily.value;
+        saveSettings();
+        updateFontSettings();
+    });
+
+    fontSize.addEventListener('input', () => {
+        currentSettings.fontSize = parseInt(fontSize.value);
+        fontSizeValue.textContent = currentSettings.fontSize;
+        saveSettings();
+        updateFontSettings();
+    });
+
+    lineSpacing.addEventListener('input', () => {
+        currentSettings.lineSpacing = parseFloat(lineSpacing.value);
+        lineSpacingValue.textContent = currentSettings.lineSpacing;
+        saveSettings();
+        updateFontSettings();
+    });
+
+    boldText.addEventListener('change', () => {
+        currentSettings.boldText = boldText.checked;
+        saveSettings();
+        updateFontSettings();
+    });
+}
+
+function initializeColorControls() {
+    const colorThemeBtns = document.querySelectorAll('.color-theme-btn');
+
+    colorThemeBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            colorThemeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSettings.colorTheme = btn.getAttribute('data-theme');
+            saveSettings();
+            updateColorSettings();
+        });
+    });
+}
+
+function updateFontSettings() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'updateFontSettings',
+                settings: {
+                    fontFamily: currentSettings.fontFamily,
+                    fontSize: currentSettings.fontSize,
+                    lineSpacing: currentSettings.lineSpacing,
+                    boldText: currentSettings.boldText
+                }
+            }).catch(() => {});
+        }
+    });
+}
+
+function updateColorSettings() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'updateColorSettings',
+                settings: {
+                    colorTheme: currentSettings.colorTheme
+                }
+            }).catch(() => {});
+        }
+    });
+}
 
 function populateVoices() {
   chrome.tts.getVoices((voices) => {

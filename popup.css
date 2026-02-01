@@ -366,6 +366,77 @@ header h1 {
     color: #333;
 }
 
+.font-select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    font-family: 'Verdana', sans-serif;
+}
+
+.font-select:hover {
+    border-color: #ffaacb;
+    background: #fdf6f9;
+}
+
+.font-select:focus {
+    outline: none;
+    border-color: #a2d1e8;
+    box-shadow: 0 0 8px rgba(162, 209, 232, 0.3);
+}
+
+.font-select option {
+    padding: 10px;
+    background: white;
+    color: #333;
+}
+
+.color-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.color-theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 11px;
+    font-weight: 500;
+    min-height: 50px;
+    white-space: normal;
+    text-align: center;
+}
+
+.color-theme-btn:hover {
+    border-color: #ffaacb;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-theme-btn.active {
+    border-color: #a2d1e8;
+    box-shadow: 0 0 12px rgba(162, 209, 232, 0.5);
+}
+
+.color-sample {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    display: block;
+}
+
 .status-display {
     padding: 12px;
     background: #f5f7fa;

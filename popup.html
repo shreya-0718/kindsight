@@ -105,12 +105,54 @@
 
         <div id="fonts" class="tab-content">
             <h2>Font Adjustments</h2>
-            <p class="placeholder">Font controls coming soon...</p>
+            <div class="control-group">
+                <label for="fontFamily">Font Family:</label>
+                <select id="fontFamily" class="font-select">
+                    <option value="system">System Font</option>
+                    <option value="sans-serif">Sans Serif</option>
+                    <option value="serif">Serif</option>
+                    <option value="monospace">Monospace</option>
+                    <option value="dyslexia-friendly">Dyslexia-Friendly</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="fontSize">Font Size: <span id="fontSizeValue">16</span>px</label>
+                <input type="range" id="fontSize" class="slider" min="12" max="24" step="1" value="16">
+            </div>
+            
+            <div class="control-group">
+                <label for="lineSpacing">Line Spacing: <span id="lineSpacingValue">1.5</span></label>
+                <input type="range" id="lineSpacing" class="slider" min="1" max="2.5" step="0.1" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <label class="toggle-label">
+                    <input type="checkbox" id="boldText" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    Bold Text
+                </label>
+            </div>
         </div>
 
         <div id="colors" class="tab-content">
-            <h2>Color Themes</h2>
-            <p class="placeholder">Color controls coming soon...</p>
+            <div class="control-group">
+                <label>Color Theme:</label>
+                <div class="color-theme-grid">
+                    <button class="color-theme-btn active" data-theme="normal" style="background-color: transparent; color: inherit; border: 2px dashed #999;">Normal</button>
+                    <button class="color-theme-btn" data-theme="high-contrast-light" style="background-color: #ffffff; color: #000000;">High Contrast Light</button>
+                    <button class="color-theme-btn" data-theme="high-contrast-dark" style="background-color: #000000; color: #ffffff;">High Contrast Dark</button>
+                    <button class="color-theme-btn" data-theme="grayscale" style="background-color: #808080; color: #ffffff;">Grayscale</button>
+                    <button class="color-theme-btn" data-theme="warm-tint" style="background-color: #fff8f0; color: #8b5a2b;">Warm Tint</button>
+                    <button class="color-theme-btn" data-theme="pastel-light" style="background-color: #f5f0e8; color: #5a5a5a;">Pastel Light</button>
+                    <button class="color-theme-btn" data-theme="pastel-dark" style="background-color: #3a3a3a; color: #e8e0d8;">Pastel Dark</button>
+                    <button class="color-theme-btn" data-theme="protanopia" style="background-color: #ffffff; color: #0066cc;">Protanopia</button>
+                    <button class="color-theme-btn" data-theme="deuteranopia" style="background-color: #ffffff; color: #cc0000;">Deuteranopia</button>
+                    <button class="color-theme-btn" data-theme="tritanopia" style="background-color: #000000; color: #ffff00;">Tritanopia</button>
+                    <button class="color-theme-btn" data-theme="soft-light" style="background-color: #f9f7f4; color: #8a8a8a;">Soft Light</button>
+                    <button class="color-theme-btn" data-theme="soft-dark" style="background-color: #2a2a2a; color: #c0c0c0;">Soft Dark</button>
+                </div>
+            </div>
         </div>
     </div>
 
