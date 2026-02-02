@@ -689,6 +689,8 @@ if (request.action === 'updateColorSettings') {
 });
 
 let styleElement = null;
+let currentFontSettings = null;
+let currentColorSettings = null;
 
 function applyFontSettings(settings) {
   const fontMap = {
@@ -699,19 +701,18 @@ function applyFontSettings(settings) {
     'dyslexia-friendly': 'OpenDyslexic, Arial, sans-serif'
   };
 
+  currentFontSettings = settings;
   const fontFamily = fontMap[settings.fontFamily] || fontMap['system'];
   const fontSize = settings.fontSize || 16;
   const lineSpacing = settings.lineSpacing || 1.5;
   const boldWeight = settings.boldText ? '700' : 'normal';
 
-  applyStyle(`
-    * {
-      font-family: ${fontFamily} !important;
-      font-size: ${fontSize}px !important;
-      line-height: ${lineSpacing} !important;
-      font-weight: ${boldWeight} !important;
-    }
-  `);
+  currentFontSettings.fontFamily = fontFamily;
+  currentFontSettings.fontSize = fontSize;
+  currentFontSettings.lineSpacing = lineSpacing;
+  currentFontSettings.boldWeight = boldWeight;
+
+  applyAllStyles();
 }
 
 function applyColorSettings(settings) {
@@ -778,122 +779,199 @@ function applyColorSettings(settings) {
     }
   };
 
-  const theme = themeColors[settings.colorTheme] || themeColors['normal'];
-
-  if (settings.colorTheme === 'normal') {
-    applyStyle('');
-    return;
-  }
-
-  let cssRule = `
-    html {
-      background: ${theme.backgroundColor} !important;
-      background-color: ${theme.backgroundColor} !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      min-height: 100vh !important;
-      width: 100% !important;
-    }
-
-    body {
-      background: ${theme.backgroundColor} !important;
-      background-color: ${theme.backgroundColor} !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      min-height: 100vh !important;
-      width: 100% !important;
-    }
-
-    * {
-      color: ${theme.color} !important;
-    }
-
-    *, *::before, *::after {
-      background-color: ${theme.backgroundColor} !important;
-    }
-
-    div, main, article, section, header, footer, nav, aside,
-    ul, ol, li, dl, dt, dd, figure, figcaption {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.color} !important;
-    }
-
-    p, span, h1, h2, h3, h4, h5, h6, label, strong, em, i, b,
-    small, sub, sup, mark, del, ins, q, cite, abbr, time {
-      color: ${theme.color} !important;
-      background-color: transparent !important;
-    }
-
-    a, a:visited, a:hover, a:active {
-      color: ${theme.color} !important;
-      text-decoration: underline;
-      background-color: transparent !important;
-    }
-
-    input, textarea, select, option, optgroup,
-    button, input[type="button"], input[type="submit"],
-    input[type="reset"], input[type="file"] {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.color} !important;
-      border-color: ${theme.color} !important;
-    }
-
-    table, thead, tbody, tfoot, tr, td, th, caption {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.color} !important;
-      border-color: ${theme.color} !important;
-    }
-
-    code, pre, kbd, samp, var {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.color} !important;
-    }
-
-    svg {
-      fill: ${theme.color} !important;
-      stroke: ${theme.color} !important;
-    }
-    svg [fill]:not([fill="currentColor"]),
-    svg [stroke]:not([stroke="currentColor"]) {
-      fill: ${theme.color} !important;
-      stroke: ${theme.color} !important;
-    }
-
-    img, video, canvas, iframe, embed, object {
-      background-color: ${theme.backgroundColor} !important;
-    }
-
-    * {
-      box-shadow: none !important;
-    }
-
-    @viewport {
-      width: device-width;
-      zoom: 1.0;
-    }
-
-    .container, .wrapper, .content, .page, .main,
-    [class*="container"], [class*="wrapper"], [class*="content"] {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.color} !important;
-    }
-
-    ${theme.filter !== 'none' ? `
-    html {
-      filter: ${theme.filter} !important;
-    }
-    ` : ''}
-  `;
-
-  applyStyle(cssRule);
+  currentColorSettings = settings;
+  applyAllStyles();
 }
 
-function applyStyle(cssText) {
+function applyAllStyles() {
   if (!styleElement) {
     styleElement = document.createElement('style');
     styleElement.id = 'kindsight-style';
     styleElement.setAttribute('type', 'text/css');
     document.head.appendChild(styleElement);
   }
-  styleElement.textContent = cssText;
+
+  let combinedCSS = '';
+
+  if (currentFontSettings) {
+    combinedCSS += `
+      * {
+        font-family: ${currentFontSettings.fontFamily} !important;
+        font-size: ${currentFontSettings.fontSize}px !important;
+        line-height: ${currentFontSettings.lineSpacing} !important;
+        font-weight: ${currentFontSettings.boldWeight} !important;
+      }
+    `;
+  }
+
+  if (currentColorSettings) {
+    const themeColors = {
+      'normal': {
+        backgroundColor: 'transparent',
+        color: 'inherit',
+        filter: 'none'
+      },
+      'high-contrast-light': {
+        backgroundColor: '#ffffff',
+        color: '#000000',
+        filter: 'none'
+      },
+      'high-contrast-dark': {
+        backgroundColor: '#000000',
+        color: '#ffffff',
+        filter: 'invert(1)'
+      },
+      'grayscale': {
+        backgroundColor: '#808080',
+        color: '#ffffff',
+        filter: 'grayscale(1)'
+      },
+      'warm-tint': {
+        backgroundColor: '#fff8f0',
+        color: '#8b5a2b',
+        filter: 'sepia(0.3)'
+      },
+      'pastel-light': {
+        backgroundColor: '#f5f0e8',
+        color: '#5a5a5a',
+        filter: 'brightness(1.1) saturate(0.8)'
+      },
+      'pastel-dark': {
+        backgroundColor: '#3a3a3a',
+        color: '#e8e0d8',
+        filter: 'invert(0.9) brightness(0.7)'
+      },
+      'protanopia': {
+        backgroundColor: '#ffffff',
+        color: '#0066cc',
+        filter: 'none'
+      },
+      'deuteranopia': {
+        backgroundColor: '#ffffff',
+        color: '#cc0000',
+        filter: 'none'
+      },
+      'tritanopia': {
+        backgroundColor: '#000000',
+        color: '#ffff00',
+        filter: 'invert(1)'
+      },
+      'soft-light': {
+        backgroundColor: '#f9f7f4',
+        color: '#8a8a8a',
+        filter: 'brightness(1.05) contrast(0.95)'
+      },
+      'soft-dark': {
+        backgroundColor: '#2a2a2a',
+        color: '#c0c0c0',
+        filter: 'brightness(0.9)'
+      }
+    };
+
+    const theme = themeColors[currentColorSettings.colorTheme] || themeColors['normal'];
+
+    if (currentColorSettings.colorTheme !== 'normal') {
+      combinedCSS += `
+        html {
+          background: ${theme.backgroundColor} !important;
+          background-color: ${theme.backgroundColor} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100vh !important;
+          width: 100% !important;
+        }
+
+        body {
+          background: ${theme.backgroundColor} !important;
+          background-color: ${theme.backgroundColor} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100vh !important;
+          width: 100% !important;
+        }
+
+        * {
+          color: ${theme.color} !important;
+        }
+
+        *, *::before, *::after {
+          background-color: ${theme.backgroundColor} !important;
+        }
+
+        div, main, article, section, header, footer, nav, aside,
+        ul, ol, li, dl, dt, dd, figure, figcaption {
+          background-color: ${theme.backgroundColor} !important;
+          color: ${theme.color} !important;
+        }
+
+        p, span, h1, h2, h3, h4, h5, h6, label, strong, em, i, b,
+        small, sub, sup, mark, del, ins, q, cite, abbr, time {
+          color: ${theme.color} !important;
+          background-color: transparent !important;
+        }
+
+        a, a:visited, a:hover, a:active {
+          color: ${theme.color} !important;
+          text-decoration: underline;
+          background-color: transparent !important;
+        }
+
+        input, textarea, select, option, optgroup,
+        button, input[type="button"], input[type="submit"],
+        input[type="reset"], input[type="file"] {
+          background-color: ${theme.backgroundColor} !important;
+          color: ${theme.color} !important;
+          border-color: ${theme.color} !important;
+        }
+
+        table, thead, tbody, tfoot, tr, td, th, caption {
+          background-color: ${theme.backgroundColor} !important;
+          color: ${theme.color} !important;
+          border-color: ${theme.color} !important;
+        }
+
+        code, pre, kbd, samp, var {
+          background-color: ${theme.backgroundColor} !important;
+          color: ${theme.color} !important;
+        }
+
+        svg {
+          fill: ${theme.color} !important;
+          stroke: ${theme.color} !important;
+        }
+        svg [fill]:not([fill="currentColor"]),
+        svg [stroke]:not([stroke="currentColor"]) {
+          fill: ${theme.color} !important;
+          stroke: ${theme.color} !important;
+        }
+
+        img, video, canvas, iframe, embed, object {
+          background-color: ${theme.backgroundColor} !important;
+        }
+
+        * {
+          box-shadow: none !important;
+        }
+
+        @viewport {
+          width: device-width;
+          zoom: 1.0;
+        }
+
+        .container, .wrapper, .content, .page, .main,
+        [class*="container"], [class*="wrapper"], [class*="content"] {
+          background-color: ${theme.backgroundColor} !important;
+          color: ${theme.color} !important;
+        }
+
+        ${theme.filter !== 'none' ? `
+        html {
+          filter: ${theme.filter} !important;
+        }
+        ` : ''}
+      `;
+    }
+  }
+
+  styleElement.textContent = combinedCSS;
 }
